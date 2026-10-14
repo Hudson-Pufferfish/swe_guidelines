@@ -1157,9 +1157,9 @@ system-scope methods. Tests assert each fact on a live connection, and
 read `pg_class` and `pg_policies` to hold the policies to the scope map.
 
 <!-- agents-only
-The methods that take no tenant are listed by name in the project's
-`pyproject.toml`, under `[tool.arch-check.options.CTX-12]`, and no
-others take none ([`pyproject.toml`](scaffold/acme_root/pyproject.toml)).
+Each method that takes no tenant is declared `tenantless` beside it,
+on its interface, and no other takes none
+([`context.py`](scaffold/acme_root/om/src/acme/om/context.py)).
 Among them:
 
 - the sweeps' claims and purges across tenants, such as `claim_next`,
@@ -1835,7 +1835,7 @@ Durable work is a row in the `queue` role
 
 ``` python
 class WorkItem(Identifiable, Trackable):
-    kind: WorkKind             # its payload's shape is in WORK_PAYLOADS
+    kind: KindName             # a kind the registry holds, in capitals
     target_id: UUID            # the record it advances
     idempotency_key: UUID      # unique per tenant
     request_id: UUID           # the request that caused it
@@ -1896,17 +1896,40 @@ its own.
   the claims of that moment, until one of its items ends.
 -->
 
+Each kind is registered once, with a spec: its name, the shape of its
+payload, the permission that asks for it, and its lane
+([`kinds.py`](scaffold/acme_root/om/src/acme/om/work/kinds.py)). The
+work namespace declares its own kinds, and any other namespace declares
+its own in a module beside its manager. The root that builds the
+managers composes them into the one registry a process holds
+([`root.py`](scaffold/acme_root/om/src/acme/om/root.py)), and the work
+manager reads every kind through it. A name registered twice is
+refused, so no namespace takes over another's kind. A row's kind is a
+name the registry holds, never a closed set the wire repeats.
+
 A kind can have a lane of its own too, such as a long-held kind kept
-apart from short ones. `WORK_LANES` names the lane of each such kind,
-and `relayed_lane` reads it, for the relay and for a worker of the
-kind's own, so the two never disagree. A replica of a worker that
-serves many kinds takes the lane from its deployment, spelled as the
-registry spells it. An outbox row carries no lane, so the relay lands
-each item on its kind's lane, and the item of a kind the registry does
-not name on the default one. A direct create carries the lane its
+apart from short ones. Its spec names the lane, and the relay and a
+worker of the kind's own both read it there, so the two never disagree.
+A replica of a worker that serves many kinds takes the lane from its
+deployment, spelled as the spec spells it. An outbox row carries no
+lane, so the relay lands each item on its kind's lane: the default one,
+unless its spec names another. A direct create carries the lane its
 caller sets. A long-held item on a lane of its own counts against no
-cap of the lane of short items. A kind's own lane is a line in the
-registry, never an edit of the relay.
+cap of the lane of short items. A kind's own lane is a field of its
+spec, never an edit of the relay.
+
+<!-- agents-only
+- A spec is `WorkKindSpec(name, payload, permission, lane="default")`,
+  its name held to `KIND_NAME`. The work namespace's own are
+  `WORK_KINDS`; another namespace's are a tuple of specs in its
+  `kinds.py`, named for it. `KINDS` in `root.py` is a `WorkKinds`
+  built from `WORK_KINDS` and, below the marker line, each namespace's
+  tuple.
+- The worker keys its `handlers` by the kind's name and refuses at
+  build a handler for a kind the registry does not hold. Its test holds
+  one handler for each registered kind, and each kind's permission to
+  its handler's calls.
+-->
 
 Every write after the enqueue is the system's, signed `EMPTY_UUID`.
 `created_by` is the person who asked, so the claim rebuilds their
@@ -2582,6 +2605,12 @@ flag folds each migration chain. It works on a branch it never pushes.
 it feeds, and that queue's dead letters, so a tree with no inbound
 webhook leaves it out.
 
+An ops skill that reads signals names no namespace. What it meets of
+one, its kinds, its events, its log lines, and its alarms, sits in
+that namespace's signals file, and the skill reads one file per
+namespace. A copy adds the file for each namespace of its own and
+edits no skill.
+
 <!-- agents-only
 - An audit's report puts the answer first, then a table with a verdict
   per row, the findings by impact with a fix and an effort each, and
@@ -2599,6 +2628,11 @@ webhook leaves it out.
   its output, and every invariant inline. Long reference material sits
   in a file under the skill's folder, named by the step that reads it
   when that step runs.
+- The signals files are `.agents/skills/_shared/signals/<ns>.md`, one
+  per namespace or process, under the headings the folder's
+  `README.md` names. `ops-investigate`, `ops-watch`, and
+  `ops-root-cause` read every file there; their steps, their bounds,
+  and their commands stay in their own text.
 -->
 
 ### Dashboards and Alarms as Code
@@ -2849,16 +2883,30 @@ builds on first use is refused, since it moves a wiring error from boot
 to a request. A boot benchmark measures it, and a test holds that the
 managers build once for any number of requests.
 
+A root is typed and written out, never discovered at run time, so a
+copy adds its namespaces to the same files the scaffold's next release
+edits. Each root, and each registry a copy adds to, holds the
+scaffold's entries, then one marker line, then the copy's own, one to a
+line with a trailing comma; the two then edit lines apart, and a merge
+takes both. `build_managers` makes one builder call per manager, in
+dependency order. A rule that names methods (the storage methods that
+take no tenant, the manager methods that take no stage) is declared
+beside each method, never kept as a list a copy extends.
+
 ### Records of Decisions
 
 A decision that constrains future work is an ADR under `docs/adr/`:
 context, decision, consequences, numbered and cited by number. The
 scaffold's ADRs stay below 1000, and a copy numbers its own from 1001,
-so a later scaffold ADR never takes a number the copy uses. An ADR
+so a later scaffold ADR never takes a number the copy uses. A copy never
+edits an ADR the scaffold gave: it records what it extends or changes
+in an ADR of its own, which cites the scaffold's by number and title, so
+a later release rewrites the scaffold's with no conflict. An ADR
 [says what holds](#documentation-as-code): it is rewritten in place when
 its decision changes and removed when it constrains nothing, its number
 never changes, and its status is one date. A substitution is one row of
-the one ADR that lists them. A changelog holds the latest release, and
+the one ADR that lists them, and a copy lists its own in one ADR of its
+own. A changelog holds the latest release, and
 the release notes hold the rest. `specs/architecture.md` pins this
 document and links the ADRs that depart from it; this document describes
 how we build, and names each decision it makes for every system where it

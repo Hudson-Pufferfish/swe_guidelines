@@ -144,9 +144,11 @@ its base moves the pin with the merge that takes the release: see
 A project that keeps every technology the guideline names writes
 nothing. One that substitutes an equivalent writes one ADR, once: for
 each substitution, the choice, the substitute, the reason, and the
-rules the substitute must still satisfy. A copy of the scaffold has it
-as `docs/adr/0002-technology-choices.md`; edit it rather than add a
-second. A substitution that changes a shape is a deviation.
+rules the substitute must still satisfy. A copy of the scaffold takes
+the scaffold's as `docs/adr/0002-technology-choices.md` and never edits
+it: it lists its own substitutions in one ADR of its own, numbered from
+1001, which cites ADR 0002 by number and title. A substitution that
+changes a shape is a deviation.
 
 ## Record deviations as ADRs
 
@@ -160,7 +162,10 @@ lowers a severity.
 An ADR says what holds. When its decision changes, rewrite it in place.
 When the deviation ends, remove it with its row. Its number never
 changes, and its status stays one date: git, the pull request, and the
-release notes say what it was.
+release notes say what it was. A copy rewrites only its own ADRs. One
+the scaffold gave stays as the scaffold wrote it, and what the copy
+extends or changes in it goes in an ADR of the copy's own, which cites
+the scaffold's by number and title.
 
 ## Operate with the built-in skills
 
@@ -176,6 +181,12 @@ with `local` against the local stack's twins, so it is tested on a
 laptop before an environment trusts it. An audit reads and reports; it
 never fixes.
 
+`ops-investigate`, `ops-watch`, and `ops-root-cause` name no
+namespace. They read one signals file per namespace or process, in
+`.agents/skills/_shared/signals/`: what it emits that an investigation
+meets. A copy adds `<ns>.md` there for each namespace of its own, and
+edits no skill.
+
 `/docs-compact` keeps the tree's documents to what holds: its ADRs, its
 changelog, the rows of `specs/architecture.md`, and its comments. With
 `--migrations` it also folds the revisions each role's chain owns into
@@ -187,7 +198,8 @@ pushes nothing.
 
 An existing tree copies the scaffold's `.agents/skills/` into its own
 and renames `acme` in them to its own name, in each form
-`scaffold/new.py` uses. Then, from the tree's root, it moves any skill
+`scaffold/new.py` uses. It keeps the signals files of the namespaces it
+has, and writes one for each namespace of its own. Then, from the tree's root, it moves any skill
 of its own from `.claude/skills/` into `.agents/skills/`, and makes
 `.claude/skills` a link to that folder:
 

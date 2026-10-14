@@ -34,7 +34,9 @@ sees Y"), never the newest failures of any kind. A change event tied to the
 symptom is a failure the stream records or a write that landed, and
 either request is followed, so a run whose only such change events are
 writes that landed still makes its passes: a request can land its
-write and fail its answer. Without `--request-id`, the
+write and fail its answer. A write a signals file names as deciding
+the symptom (a setting, a row its reason reads) is tied to it too, and
+its request is followed. Without `--request-id`, the
 symptom is the one the prompt or the investigation's report names;
 when neither names one, ask for it, as for `--env`. A pass that finds
 no cause reports "not found" for its id. After the fifth pass the
@@ -81,6 +83,13 @@ stop, and name the refresh the preamble gives.
 
 The processes are `api` and `maintenance`, as `deployment/README.md`
 lists them.
+
+Before step 1, read every file in `../_shared/signals/`, a path from
+this skill's folder. Its `README.md` says what each heading holds, and
+each other file is one namespace or one process, the scaffold's and a
+copy's alike: a copy adds `<ns>.md` there for each namespace of its
+own. Step 3 reads their Change events, and step 8 their Kinds and Log
+lines.
 
 Steps 4 to 8 are one pass, for one request id, and each id gets one
 pass. A pass reads each signal once: a signal that answers nothing is
@@ -200,12 +209,14 @@ runs once, before the passes. It is not a pass.
    that is empty or not JSON, ends the run as in step 2.
 
    Without `--request-id`, pick the request ids here, at most five, the
-   newest first among the change events tied to the symptom. A failure the
-   stream records is `work.item.failed` or `outbox.row.failed`: a work
-   item or an outbox row that failed for good. Any other change event tied to
-   the symptom is a write that landed, whose request is followed for
-   what it did next. When no change event is tied to the symptom, the run
-   makes no pass, as Input says.
+   newest first among the change events tied to the symptom. A failure
+   the stream records is a change event of a kind a signals file's
+   Change events names. Any other change event tied to the symptom is a
+   write that landed, whose request is followed for what it did next.
+   A write a signals file names as deciding the symptom is tied to it,
+   whichever route made it.
+   When no change event is tied to the symptom, the run makes no pass,
+   as Input says.
 4. The error tracker, by the pass's request id. The tracker holds no
    tenant: an event's tags are `service`, `request_id`, and the SDK's
    own (`environment`, `release`, `server_name`), never an org id, so
@@ -328,14 +339,26 @@ runs once, before the passes. It is not a pass.
    `start` of step 3 to now, rounded up, and its read covers the
    window: `jq -n '(now - <start>) / 60 | ceil'`. The local reader has
    no log store of its own: without `--log-file` its log leg reports
-   zero lines, which says nothing.
+   zero lines, which says nothing. `--log-file` takes one file, so the
+   processes' logs go in one: step 5's `docker compose ... logs` call
+   for `api maintenance`, with `--no-log-prefix` and without its
+   `grep`, written to a file with `>`. Compose otherwise puts the
+   service's name before each line, and the reader parses a line as a
+   record only when it starts with `{`. A process that logs to a file
+   of its own on the host is read by step 5's `grep` instead.
 
 8. Correlate. One request id ties the change event row (what the tenant
    asked), the log lines (what the process decided), the trace (where
    it waited), and the error event (where it broke). The cause is the
    first of those that disagrees with the code's intent; read the
-   code at the file and line the error names with `Read` and `Grep`.
-   When none disagrees, the pass ends with "not found" for its id,
+   code at the file and line the error names with `Read` and `Grep`,
+   or, with no error event, the code of the module the log line names.
+   A log line or a kind a signals file names is read as that file says.
+   A cause the code intends, which a signals file reads as the
+   symptom's reason (a setting, a row), disagrees with nothing and is
+   still the cause: the pass ends with "cause found", naming that
+   setting or row.
+   Otherwise, when none disagrees, the pass ends with "not found" for its id,
    naming each leg it could not read, and the next id's pass starts.
 9. Write the report once the last pass ends, the fifth at most. The
    fix is a pull request, a setting, or a resource, named; it is never

@@ -58,7 +58,11 @@ copy.
   `update_<entity>`).
 - A work kind is upper snake case, and its handler is
   `<Kind>HandlerImpl` (`NOTIFY_SHIPMENT` gives
-  `NotifyShipmentHandlerImpl`).
+  `NotifyShipmentHandlerImpl`). It is named in the `StrEnum` of the
+  namespace that starts it, `<Namespace>Kind`, and declared in that
+  namespace's `<NAMESPACE>_KINDS`, both in its `kinds.py`; the root's
+  `KINDS` takes the tuple below its marker, and the worker's `handlers`
+  take the handler below theirs.
 - A cloud resource takes the kebab form of the name. The production
   environment is `production` in every name a process, a role, a
   profile, or a resource reads; only its Terraform folders are `prod/`.
@@ -73,9 +77,10 @@ a copy of the shape still goes wrong.
   stage for a transition or the sweep, `ictx` for an identity before a
   tenant, and `octx` on the operator plane. A storage method takes
   `org_id: UUID` first. A method that takes no tenant says why in its
-  docstring and is listed under `[tool.arch-check.options.CTX-12]
-  tenantless` in the root `pyproject.toml` and in
-  `om/tests/unit/test_storage_exceptions.py`. A site that builds a
+  docstring and is declared `@tenantless` (from `acme.om.context`)
+  beside it on its interface; a manager method that takes no stage is
+  declared `@stageless`, and a transition `@transition`. Each is read
+  where it is declared, and no list names it. A site that builds a
   stage above the request stage is listed under
   `[tool.arch-check.options.CTX-26] sites` and in
   `om/tests/unit/test_stage_construction.py`.
@@ -140,7 +145,7 @@ a copy of the shape still goes wrong.
   it creates its policy, with `ENABLE` and `FORCE ROW LEVEL SECURITY`.
   Every Postgres statement opens through the base's `_session_for`,
   with the call's scope by keyword. `EMPTY_UUID` is passed only by a
-  method on the tenantless list.
+  method declared `@tenantless`.
 - **A backfill lifts the force.** A data migration runs as the
   migration login, which `FORCE ROW LEVEL SECURITY` binds, so its
   `UPDATE` would touch nothing. Its wrapper calls `run_backfill` in
@@ -170,6 +175,13 @@ a copy of the shape still goes wrong.
   at its latest stable release that a patch release already follows,
   as Technology Choices and How to Override Them (Versions) states. A
   version the scaffold cannot confirm is named in the output.
+- **A namespace says what an investigation meets of it.** In a tree
+  whose ops skills read `.agents/skills/_shared/signals/`, a namespace's
+  kinds, outcomes, gauges, alarms, queues, the log lines an ops skill
+  must find, and its failure events sit in its own file there,
+  `<ns>.md`, under the headings the folder's `README.md` names. A skill
+  that gives a namespace one of those writes it in that file, never in
+  an ops skill's own text or another namespace's file.
 - **No placeholder.** No empty module, no `TODO`, no dead import. A
   namespace's `README.md`, and `om/README.md` above it, speak the
   product's language to a reader with no code.
@@ -178,8 +190,13 @@ a copy of the shape still goes wrong.
 
 A changed file gains an entry: a getter on a root, a field on
 `Managers`, a router in `HOSTED`, a row in a map, a member in the
-workspace. Nothing is reordered, and nothing is removed but what a
-skill's Changed table names as removed.
+workspace. In a composition root or a registry, the entry goes below
+its marker line, `# A copy adds its entries below this line.` (`//` in
+TypeScript), after the entries already there, one to a line with a
+trailing comma. The lines above a marker are the scaffold's, and a
+tree made from it never edits them, so its next release merges beside
+the tree's own entries. Nothing is reordered, and nothing is removed but
+what a skill's Changed table names as removed.
 
 ## After writing
 
