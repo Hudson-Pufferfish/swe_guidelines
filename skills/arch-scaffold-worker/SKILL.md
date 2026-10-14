@@ -88,8 +88,10 @@ the maintenance worker should not carry.
    setting that picks one, as the conventions' Two storage impls rule
    says, or through the provider's own skill where the copy has one;
    it never calls the provider directly.
-3. A long-running kind is an `OrchestrationKind` whose step is mapped in
-   `build_loop`, not a handler that loops; it parks or fails as Long-Running
+3. A long-running kind is an `OrchestrationKindSpec` in its namespace's
+   `kinds.py`, registered in `ORCHESTRATION_KINDS` below the marker, whose
+   step is mapped by its name in `build_loop`, not a handler that loops;
+   it parks or fails as Long-Running
    Orchestrations states. A lane is a work kind's, and every orchestration
    kind's steps ride `WorkKind.ORCHESTRATION`, so `--lane` gives no one
    orchestration kind a lane of its own. A long-running kind that needs

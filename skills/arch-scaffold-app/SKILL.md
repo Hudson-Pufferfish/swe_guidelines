@@ -40,7 +40,7 @@ portal.
 | File | Change |
 |------|--------|
 | `pyproject.toml` (root) (CLI) | the member in `[tool.uv.workspace] members` |
-| `.env.example`, `scripts/dev.sh`, `Makefile` (`urls`) (browser app) | its dev port, its dev server started, and its local URL; no `public/config.json`, since locally the build variables apply, as the portal's `src/app/config.ts` says |
+| `.env.example`, `scripts/dev.sh`, `Makefile` (`urls`) (browser app) | its dev port, its dev server started, and its local URL below the marker in `urls`; no `public/config.json`, since locally the build variables apply, as the portal's `src/app/config.ts` says |
 | `clients/typescript/src/types/<ns>.ts`, `src/index.ts` (browser app) | each type the app reads that the facade lacks, re-exported from the schema as the facade's others are (for the console, the operator plane's: the org page, the issued operator token, the TOTP views, the operator role), and a namespace with no facade file gets one, with its line in `index.ts` |
 | `apps/portal/package.json` (`admin`) | `exports` for the design kit, as `clients/typescript/package.json` exports its entry: `"./design/kit": "./src/design/kit/index.tsx"`, `"./design/tokens": "./src/design/tokens.ts"`, and `"./design/*.css": "./src/design/*.css"`; the console depends on the portal's package as `workspace:*` and imports `<the portal's package>/design/kit` |
 | `services/api/src/<name>/services/api/settings.py`, `.env.example`, `deployment/terraform/modules/environment/main.tf` (`api_sign_in_environment`), `deployment/workos/environments.yaml`, `docs/runbooks/providers/workos.md` (browser app that signs in) | the app's own `/auth/callback`, and its `/signed-out`, beside the portal's in every list: the API's redirect and sign-out return defaults (its local port), each deployed environment's, the WorkOS application's redirect and sign-out URIs, and the runbook's table |
@@ -48,6 +48,7 @@ portal.
 | `deployment/terraform/modules/environment/outputs.tf`, `environments/staging/outputs.tf`, `environments/prod/outputs.tf`, `scripts/deploy_static.sh` (browser app) | `<app>_bucket`, `<app>_distribution_id`, and `<app>_url` beside the portal's, and the app's name in the script's name check |
 | `.github/workflows/deploy-staging.yml`, `deploy-production.yml` (browser app) | its bundle built once under the commit by staging and promoted to production, never built again, beside the portal's |
 | `docs/adr/0010-operators-work-through-the-api.md`, `specs/architecture.md` (`admin`) | the ADR removed (`git rm`), since the console ends its deviation, and its row gone from the deviations, which holds the one link to it |
+| `llms.txt` (browser app) | the line linking its README, below the section's marker under System developers |
 
 ## Procedure
 

@@ -53,7 +53,7 @@ The shape is the API, `services/api/`. Under `services/<service-name>/`:
 | `pyproject.toml` (root) | the member in `[tool.uv.workspace] members` |
 | `Makefile` | `openapi` emits this service's documents through the one emitter, one per namespace it hosts and `common.json`, to `services/<service-name>/openapi/`; `clients/openapi/` stays the API's |
 | `.github/workflows/ci.yml` | the drift step's pathspec names `services/<service-name>/openapi` beside `clients`, in both its `git status --porcelain` calls, so a change or a new file there fails it |
-| `scripts/dev.sh`, `Makefile` (`urls`) | the service started on its port, and its docs in the local URLs |
+| `scripts/dev.sh`, `Makefile` (`urls`) | the service started on its port, and its docs in the local URLs, below the marker in `urls` |
 | `deployment/local/docker-compose.full.yml` (with `--container`) | the service as a container |
 | `.env.example` | every field of its settings under the prefix; its host and port are its own, `<NAME>_<SVC>_HOST` and `<NAME>_<SVC>_PORT` (`<SVC>` the snake case in capitals, fields `<svc>_host` and `<svc>_port`), never the API's `<NAME>_HOST` and `<NAME>_PORT`, so both run in one environment |
 | `deployment/terraform/modules/environment/main.tf`, `deployment/terraform/environments/*/` | one instance of the service module beside `module "api"`, and beside it its `aws_lb_target_group` and an `aws_lb_listener_rule` on the HTTPS listener for the paths it serves, at a priority after `hide_metrics`'s 1; the API stays the listener's default action. `module.<svc>.service_name` joins both `service_names` lists, the dashboard's and the alarms' |
@@ -66,6 +66,7 @@ The shape is the API, `services/api/`. Under `services/<service-name>/`:
 | `deployment/docker/api.Dockerfile` | the gateway's `pyproject.toml` and its folder, copied as the API's own are |
 | `pyrightconfig.json`, `ruff.toml`, `pyproject.toml` (root) | the gateway's and the service's `src` and `tests` in pyright's `include` (the service's tests in `extraPaths`), in ruff's `src`, and in pytest's `testpaths` |
 | each test that names the gateway's old path (`grep -rln '<name>.services.api.gateway' .`) | its import, from the gateway distribution |
+| `llms.txt` | the line linking its `README.md`, below the section's marker under System developers |
 
 ## Procedure
 
