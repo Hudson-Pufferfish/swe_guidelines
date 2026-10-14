@@ -674,12 +674,19 @@ def test_the_compaction_leaves_no_choice_to_the_run(sentence: str) -> None:
     assert sentence in _prose("docs-compact"), f"docs-compact no longer says: {sentence}"
 
 
-# What `make openapi` writes: the API document and the two schemas made from it.
-GENERATED = [
-    "clients/typescript/openapi.json",
-    "clients/typescript/src/schema.d.ts",
-    "clients/python/src/acme/client/schema.py",
+# What `make openapi` writes: each namespace's API document and the two
+# schemas made from it, one file per document in each folder.
+GENERATED_FOLDERS = [
+    "clients/openapi",
+    "clients/typescript/src/schema",
+    "clients/python/src/acme/client/schema",
 ]
+GENERATED = sorted(
+    str(path.relative_to(ROOT))
+    for folder in GENERATED_FOLDERS
+    for path in (ROOT / folder).iterdir()
+    if path.suffix in {".json", ".ts", ".py"}
+)
 # What a compaction never edits: an applied migration, a generated file, a
 # lock file, and the skill's own folder, which holds the phrases it sweeps for.
 NEVER_SWEPT = [
@@ -705,8 +712,10 @@ def test_the_sweep_lists_no_file_the_compaction_never_edits(tmp_path: Path) -> N
     """Step 6 rewrites what the sweep lists, so the sweep's pathspec is what
     keeps an applied migration and a generated document as they are. It runs
     here as the skill writes it, over a tree where every file tells a past."""
-    for name in GENERATED:
-        assert (ROOT / name).is_file(), f"{name} is not a file `make openapi` writes"
+    for folder in GENERATED_FOLDERS:
+        assert any(name.startswith(f"{folder}/") for name in GENERATED), (
+            f"{folder} holds no file `make openapi` writes"
+        )
     for name in [*NEVER_SWEPT, *SWEPT]:
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -792,10 +801,11 @@ def test_the_compaction_tells_a_contract_in_flight_by_the_tree() -> None:
     assert "git tag" not in _skill("docs-compact")
 
 
-def test_the_compaction_regenerates_the_api_document_before_its_gate() -> None:
-    """A docstring of an API type is in the generated document, and CI fails
-    a tree whose document is not the one its code writes. So the gates write
-    it again after the sweep and before `make check`, and commit what changed."""
+def test_the_compaction_regenerates_the_api_documents_before_its_gate() -> None:
+    """A docstring of an API type is in a generated document, and CI fails a
+    tree whose documents are not the ones its code writes. So the gates write
+    them again after the sweep and before `make check`, and commit what
+    changed."""
     gates = _prose("docs-compact").split("**Run the gates.**", 1)[1]
     assert gates.index("`make setup`") < gates.index("`make openapi`") < gates.index("`make check`")
     assert "commit what it changes, apart. Then `make check`." in gates
@@ -803,7 +813,8 @@ def test_the_compaction_regenerates_the_api_document_before_its_gate() -> None:
         tool.strip() for tool in _allowed_tools("docs-compact").split(",")
     ]
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
-    assert "make openapi && git diff --exit-code" in ci
+    drift = "make openapi\n          git status --porcelain -- clients\n"
+    assert drift + '          test -z "$(git status --porcelain -- clients)"' in ci
 
 
 def _database_gates() -> list[str]:
