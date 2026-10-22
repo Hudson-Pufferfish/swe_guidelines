@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import ast
 import contextlib
-from collections.abc import Collection, Iterator
+import weakref
+from collections.abc import Collection, Iterable, Iterator
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -211,7 +212,7 @@ class Project:
                     self._trees[file.rel] = None
                     self.parse_errors[file.rel] = (1, f"nests deeper than the {MAX_DEPTH} levels arch-check walks")
                 elif tree is not None:
-                    self._owners.update((id(n), file) for n in ast.walk(tree) if isinstance(n, ast.ClassDef))
+                    self._owners.update((id(n), file) for n in classes(tree))
         return self._trees[file.rel]
 
     def trees(self, *prefixes: str) -> Iterator[tuple[SourceFile, ast.Module]]:
@@ -246,7 +247,7 @@ class Project:
         out: list[Import] = []
         t = self.tree(file)
         if t is not None:
-            for node in ast.walk(t):
+            for node in nodes(t):
                 if isinstance(node, ast.Import):
                     out.extend(Import(module=a.name, names=(), node=node) for a in node.names)
                 elif isinstance(node, ast.ImportFrom):
@@ -384,10 +385,41 @@ def last(name: str | None) -> str | None:
     return name.rpartition(".")[2] if name else None
 
 
+_NODES: weakref.WeakKeyDictionary[ast.Module, tuple[ast.AST, ...]] = weakref.WeakKeyDictionary()
+"""The nodes `nodes` found in each module, kept while the module lives."""
+
+_CLASSES: weakref.WeakKeyDictionary[ast.AST, tuple[ast.ClassDef, ...]] = weakref.WeakKeyDictionary()
+"""The classes `classes` found under each tree, kept while the tree lives."""
+
+
+def nodes(tree: ast.AST) -> Iterable[ast.AST]:
+    """Every node under `tree`, in the order `ast.walk` yields them.
+
+    Most rules walk every module, so a module is walked on the first
+    call alone, and later calls read what it found. No rule edits a
+    tree. Any other node, a class or a function, is walked on every
+    call.
+    """
+    if not isinstance(tree, ast.Module):
+        return ast.walk(tree)
+    found = _NODES.get(tree)
+    if found is None:
+        found = _NODES[tree] = tuple(ast.walk(tree))
+    return found
+
+
 def classes(tree: ast.AST) -> list[ast.ClassDef]:
-    """Every class defined anywhere under `tree`, nested ones included, in source order."""
-    found = [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
-    return sorted(found, key=lambda n: (n.lineno, n.col_offset))
+    """Every class defined anywhere under `tree`, nested ones included, in source order.
+
+    The rules ask for a module's classes tens of times each, so they are
+    found on the first call alone, and later calls read what it found.
+    Each call returns a list of its own.
+    """
+    found = _CLASSES.get(tree)
+    if found is None:
+        walked = [n for n in nodes(tree) if isinstance(n, ast.ClassDef)]
+        found = _CLASSES[tree] = tuple(sorted(walked, key=lambda n: (n.lineno, n.col_offset)))
+    return list(found)
 
 
 def top_classes(tree: ast.Module) -> list[ast.ClassDef]:
@@ -412,7 +444,7 @@ def decorator_names(node: ast.ClassDef | Function) -> list[str]:
 
 def functions(node: ast.AST) -> list[Function]:
     """Every function or method defined anywhere under `node`, in source order."""
-    found = [n for n in ast.walk(node) if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)]
+    found = [n for n in nodes(node) if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)]
     return sorted(found, key=lambda n: (n.lineno, n.col_offset))
 
 
